@@ -1,3 +1,201 @@
+# Doctor-Patient Management API
+
+A FastAPI backend for authentication, doctor management, patient management, and doctor-patient assignments.
+
+## Features
+
+- JWT authentication
+- Secure password hashing with `pwdlib`
+- Admin and doctor roles
+- Doctor creation, listing, filtering, updating, and soft deletion
+- Patient creation and listing
+- Doctor-patient assignment
+- SQLite persistence through SQLAlchemy
+- Pydantic request validation
+- Pagination for doctor and patient lists
+- Swagger UI and ReDoc documentation
+
+## Project Structure
+
+```text
+.
+├── main.py           # FastAPI application, models, authentication, and endpoints
+├── admin.py          # Command-line script for creating an administrator
+├── requirements.txt  # Python dependencies
+└── README.md
+```
+
+## Requirements
+
+- Python 3.10 or newer
+- `pip`
+
+## Installation
+
+Create and activate a virtual environment:
+
+```bash
+python -m venv .venv
+```
+
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Install the dependencies:
+
+```bash
+pip install -r requirements.txt
+pip install PyJWT pwdlib
+```
+
+`main.py` imports `PyJWT` and `pwdlib`; install them explicitly because they are not currently listed in `requirements.txt`.
+
+## Configuration
+
+Create a `.env` file in the project directory when custom configuration is needed:
+
+```env
+DATABASE_URL=sqlite:///./assignment2.db
+SECRET_KEY=replace-this-with-a-long-random-secret
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+The application uses the values above by default, except for `SECRET_KEY`, which should be changed before deployment.
+
+## Run the Application
+
+Start the development server from the project directory:
+
+```bash
+uvicorn main:app --reload
+```
+
+The API will be available at `http://127.0.0.1:8000`.
+
+Interactive documentation:
+
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
+
+Database tables are created automatically when `main.py` starts. The default SQLite database is `assignment2.db`.
+
+## Create an Administrator
+
+Public registration creates doctor users only. Create an administrator with the command-line script:
+
+```bash
+python admin.py
+```
+
+The script asks for the administrator's name, email, and password.
+
+## Authentication
+
+Register or create a user, then log in:
+
+```http
+POST /auth/login
+```
+
+Example request:
+
+```json
+{
+  "email": "doctor@example.com",
+  "password": "secret123"
+}
+```
+
+The response contains an access token:
+
+```json
+{
+  "access_token": "JWT_TOKEN",
+  "token_type": "bearer"
+}
+```
+
+Use the token in the `Authorization` header:
+
+```text
+Authorization: Bearer JWT_TOKEN
+```
+
+In Swagger UI, select **Authorize** and enter `Bearer JWT_TOKEN`.
+
+## API Endpoints
+
+### Authentication
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| `GET` | `/` | Public | Health check |
+| `POST` | `/auth/register` | Public | Register a doctor user |
+| `POST` | `/auth/login` | Public | Log in and receive a JWT |
+
+### Doctors
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| `POST` | `/doctors` | Admin | Create a doctor |
+| `GET` | `/doctors` | Authenticated | List active doctors |
+| `GET` | `/doctors/{doctor_id}` | Authenticated | Get one active doctor |
+| `PUT` | `/doctors/{doctor_id}` | Admin | Update a doctor |
+| `DELETE` | `/doctors/{doctor_id}` | Admin | Soft-delete a doctor |
+
+The doctor list accepts `skip`, `limit`, and `specialization` query parameters.
+
+### Patients
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| `POST` | `/patients` | Admin | Create a patient |
+| `GET` | `/patients` | Doctor or Admin | List patients |
+| `GET` | `/patients/{patient_id}` | Doctor or Admin | Get a patient |
+
+The patient list accepts `skip` and `limit` query parameters. Doctors can see only their assigned patients.
+
+### Doctor-Patient Assignments
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| `POST` | `/doctors/{doctor_id}/patients/{patient_id}` | Admin | Assign a patient to a doctor |
+| `GET` | `/doctors/{doctor_id}/patients` | Doctor or Admin | List a doctor's patients |
+
+## Roles and Permissions
+
+### Admin
+
+- Create, update, list, and soft-delete doctors
+- Create and view all patients
+- Assign patients to doctors
+- View any doctor's assigned patients
+
+### Doctor
+
+- View active doctors
+- View their assigned patients
+- View a patient only when assigned to them
+- View their own assigned-patient list
+
+Public registration cannot create an admin account.
+
+## Validation Rules
+
+- Names: 2-100 characters
+- Passwords: 6-100 characters
+- Patient age: greater than zero
+- Patient phone: 10-15 digits
+- List limits: 1-100 records per request
+
+## Notes
+
+- Deleting a doctor sets the doctor and linked user to inactive instead of removing database rows.
+- Do not commit `.env` files, secret keys, or the generated SQLite database to version control.
 # Doctor–Patient Management API
 
 A production-ready backend application built using **FastAPI** for managing doctors, patients, authentication, authorization, and doctor–patient assignments.
